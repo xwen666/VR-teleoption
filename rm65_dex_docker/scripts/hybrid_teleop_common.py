@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
-import socket
 import sys
 import time
 import ctypes
-from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import yaml
 
 
 SCRIPT_PATH = Path(__file__).resolve()
@@ -39,580 +35,53 @@ from quest_bridge.realman_ik import RealManIK  # noqa: E402
 from quest_bridge.trajectory_smoothing import HAS_RUCKIG, JointTrajectorySmoother  # noqa: E402
 
 
-CUBE_SIDE_MOUNT_CONFIG_PATH = WS_SRC / "quest_bridge/config/wrist_cube_side_mount.yaml"
-DEFAULT_CONFIG_PATH = CUBE_SIDE_MOUNT_CONFIG_PATH
-ARM_JOINT_NAMES = [f"joint{i}" for i in range(1, 7)]
-HAND_ACTUATED_JOINT_NAMES = [
-    "hand_thumb_metacarpal_joint",
-    "hand_thumb_proximal_joint",
-    "hand_index_proximal_joint",
-    "hand_middle_proximal_joint",
-    "hand_ring_proximal_joint",
-    "hand_pinky_proximal_joint",
-]
-HAND_MIMIC_RULES = {
-    "hand_thumb_distal_joint": ("hand_thumb_proximal_joint", 1.0, 0.0),
-    "hand_index_distal_joint": ("hand_index_proximal_joint", 1.155, 0.0),
-    "hand_middle_distal_joint": ("hand_middle_proximal_joint", 1.155, 0.0),
-    "hand_ring_distal_joint": ("hand_ring_proximal_joint", 1.155, 0.0),
-    "hand_pinky_distal_joint": ("hand_pinky_proximal_joint", 1.155, 0.0),
-}
-RM65_JOINT_LIMIT_MIN = [-3.1, -2.268, -2.355, -3.1, -2.233, -6.28]
-RM65_JOINT_LIMIT_MAX = [3.1, 2.268, 2.355, 3.1, 2.233, 6.28]
-DEFAULT_WRIST_REGULARIZATION_JOINTS = [3, 4, 5]
-
-
-@dataclass
-class HybridConfig:
-    scene_variant: str
-    axis_mapping: str
-    rotation_axis_mapping: str
-    position_scale: float
-    rotation_scale: float
-    position_target_mode: str
-    position_lpf_alpha: float
-    rotation_lpf_alpha: float
-    pre_ik_position_gain: float
-    pre_ik_rotation_gain: float
-    joint_lpf_alpha: float
-    packet_timeout: float
-    max_position_offset: float
-    max_rotation_error: float
-    max_joint_step: float
-    max_joint_step_per_joint: Optional[np.ndarray]
-    realman_lib_path: str
-    robot_model: str
-    use_orientation: bool
-    rotation_control_mode: str
-    orientation_input_source: str
-    hybrid_pose_rotation_scale: float
-    orientation_deadband_rad: float
-    orientation_target_mode: str
-    negate_rot_xy: bool
-    orientation_debug: bool
-    orientation_fallback_to_position_only: bool
-    block_singularity: bool
-    max_ik_jump_norm: float
-    max_ik_jump_per_joint: Optional[np.ndarray]
-    dls_damping: float
-    dls_gain: float
-    dls_iterations: int
-    dls_fk_epsilon: float
-    dls_position_tolerance: float
-    dls_orientation_tolerance: float
-    dls_max_delta_per_joint: Optional[np.ndarray]
-    centering_gain: float
-    current_q_regularization_weight: float
-    posture_regularization_weight: float
-    joint_limit_weight: float
-    wrist_regularization_weight: float
-    wrist_regularization_joints: np.ndarray
-    joint_limit_min: np.ndarray
-    joint_limit_max: np.ndarray
-    singularity_threshold: float
-    singularity_decelerate: bool
-    nominal_joint_positions: np.ndarray
-    initial_joint_positions: np.ndarray
-    joint6_axis: str
-    joint6_scale: float
-    joint6_deadband_rad: float
-    joint6_min: float
-    joint6_max: float
-    max_joint6_step: float
-    trajectory_smoother: str
-    trajectory_control_dt: float
-    ruckig_max_velocity: np.ndarray
-    ruckig_max_acceleration: np.ndarray
-    ruckig_max_jerk: np.ndarray
-    wrist_to_hand_quat_xyzw: np.ndarray
-    tool_to_hand_translation: np.ndarray
-    tool_to_hand_quat_xyzw: np.ndarray
-
-
-def normalized_quat_xyzw(quat_xyzw: np.ndarray) -> np.ndarray:
-    quat = np.array(quat_xyzw, dtype=np.float32)
-    norm = float(np.linalg.norm(quat))
-    if norm < 1e-9:
-        return np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
-    return quat / norm
-
-
-def load_hybrid_config(config_path: Path) -> HybridConfig:
-    data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    params = data["wrist_ik_bridge"]["ros__parameters"]
-    max_joint_step_per_joint = np.array(
-        params.get("max_joint_step_per_joint", [0.0] * 6),
-        dtype=np.float32,
-    )
-    if not np.any(max_joint_step_per_joint > 0.0):
-        max_joint_step_per_joint = None
-    max_ik_jump_per_joint = np.array(
-        params.get("max_ik_jump_per_joint", [0.0] * 6),
-        dtype=np.float32,
-    )
-    if not np.any(max_ik_jump_per_joint > 0.0):
-        max_ik_jump_per_joint = None
-    dls_max_delta_per_joint = np.array(
-        params.get("dls_max_delta_per_joint", [0.0] * 6),
-        dtype=np.float32,
-    )
-    if not np.any(dls_max_delta_per_joint > 0.0):
-        dls_max_delta_per_joint = max_joint_step_per_joint
-    return HybridConfig(
-        scene_variant=str(params.get("scene_variant", "table_bin")),
-        axis_mapping=str(params.get("axis_mapping", "quest3_teleop_flip_forward")),
-        rotation_axis_mapping=str(
-            params.get(
-                "rotation_axis_mapping",
-                params.get("axis_mapping", "quest3_teleop_flip_forward"),
-            )
-        ),
-        position_scale=float(params.get("position_scale", 1.0)),
-        rotation_scale=float(params.get("rotation_scale", 1.0)),
-        position_target_mode=str(params.get("position_target_mode", "absolute")),
-        position_lpf_alpha=float(params.get("position_lpf_alpha", 1.0)),
-        rotation_lpf_alpha=float(params.get("rotation_lpf_alpha", 1.0)),
-        pre_ik_position_gain=float(params.get("pre_ik_position_gain", 1.0)),
-        pre_ik_rotation_gain=float(params.get("pre_ik_rotation_gain", 1.0)),
-        joint_lpf_alpha=float(params.get("joint_lpf_alpha", 1.0)),
-        packet_timeout=float(params.get("packet_timeout", 0.25)),
-        max_position_offset=float(params.get("max_position_offset", 0.45)),
-        max_rotation_error=float(params.get("max_rotation_error", 0.8)),
-        max_joint_step=float(params.get("max_joint_step", 0.0)),
-        max_joint_step_per_joint=max_joint_step_per_joint,
-        realman_lib_path=str(params.get("realman_lib_path", "")),
-        robot_model=str(params.get("robot_model", "rm65")),
-        use_orientation=bool(params.get("use_orientation", True)),
-        rotation_control_mode=str(params.get("rotation_control_mode", "joint6_only")),
-        orientation_input_source=str(params.get("orientation_input_source", "auto")),
-        hybrid_pose_rotation_scale=float(params.get("hybrid_pose_rotation_scale", 0.25)),
-        orientation_deadband_rad=float(params.get("orientation_deadband_rad", 0.0)),
-        orientation_target_mode=str(params.get("orientation_target_mode", "relative")),
-        negate_rot_xy=bool(params.get("negate_rot_xy", False)),
-        orientation_debug=bool(params.get("orientation_debug", False)),
-        orientation_fallback_to_position_only=bool(
-            params.get("orientation_fallback_to_position_only", True)
-        ),
-        block_singularity=bool(params.get("block_singularity", False)),
-        max_ik_jump_norm=float(params.get("max_ik_jump_norm", 0.0)),
-        max_ik_jump_per_joint=max_ik_jump_per_joint,
-        initial_joint_positions=np.array(
-            params.get("initial_joint_positions", [0.0, -0.7, 1.2, 0.0, 0.8, 0.0]),
-            dtype=np.float32,
-        ),
-        dls_damping=float(params.get("dls_damping", 0.05)),
-        dls_gain=float(params.get("dls_position_gain", params.get("dls_gain", 0.5))),
-        dls_iterations=int(params.get("dls_iterations", 3)),
-        dls_fk_epsilon=float(params.get("dls_fk_epsilon", 1e-4)),
-        dls_position_tolerance=float(params.get("dls_position_tolerance", 2e-3)),
-        dls_orientation_tolerance=float(params.get("dls_orientation_tolerance", 5e-2)),
-        dls_max_delta_per_joint=dls_max_delta_per_joint,
-        centering_gain=float(params.get("dls_centering_gain", params.get("centering_gain", 0.01))),
-        current_q_regularization_weight=float(params.get("current_q_regularization_weight", 0.0)),
-        posture_regularization_weight=float(params.get("posture_regularization_weight", 0.0)),
-        joint_limit_weight=float(params.get("joint_limit_weight", 0.0)),
-        wrist_regularization_weight=float(params.get("wrist_regularization_weight", 0.0)),
-        wrist_regularization_joints=np.array(
-            params.get("wrist_regularization_joints", DEFAULT_WRIST_REGULARIZATION_JOINTS),
-            dtype=np.int32,
-        ),
-        joint_limit_min=np.array(
-            params.get("joint_limit_min", RM65_JOINT_LIMIT_MIN),
-            dtype=np.float32,
-        ),
-        joint_limit_max=np.array(
-            params.get("joint_limit_max", RM65_JOINT_LIMIT_MAX),
-            dtype=np.float32,
-        ),
-        singularity_threshold=float(
-            params.get("dls_singularity_threshold", params.get("singularity_threshold", 0.1))
-        ),
-        singularity_decelerate=bool(params.get("singularity_decelerate", True)),
-        nominal_joint_positions=np.array(
-            params.get("nominal_joint_positions", [0.0, -0.7, 1.2, 0.0, 0.8, 0.0]),
-            dtype=np.float32,
-        ),
-        joint6_axis=str(params.get("joint6_axis", "z")),
-        joint6_scale=float(params.get("joint6_scale", 1.0)),
-        joint6_deadband_rad=float(params.get("joint6_deadband_rad", 0.0)),
-        joint6_min=float(params.get("joint6_min", -6.28)),
-        joint6_max=float(params.get("joint6_max", 6.28)),
-        max_joint6_step=float(params.get("max_joint6_step", 0.06)),
-        trajectory_smoother=str(params.get("trajectory_smoother", "auto")),
-        trajectory_control_dt=float(params.get("trajectory_control_dt", 0.01)),
-        ruckig_max_velocity=np.array(
-            params.get("ruckig_max_velocity", [0.20, 0.20, 0.20, 0.40, 0.40, 0.40]),
-            dtype=np.float32,
-        ),
-        ruckig_max_acceleration=np.array(
-            params.get("ruckig_max_acceleration", [0.40, 0.40, 0.40, 0.80, 0.80, 0.80]),
-            dtype=np.float32,
-        ),
-        ruckig_max_jerk=np.array(
-            params.get("ruckig_max_jerk", [1.50, 1.50, 1.50, 3.00, 3.00, 3.00]),
-            dtype=np.float32,
-        ),
-        wrist_to_hand_quat_xyzw=normalized_quat_xyzw(
-            np.array(
-                params.get("wrist_to_hand_quat_xyzw", [0.0, 0.0, 0.0, 1.0]),
-                dtype=np.float32,
-            )
-        ),
-        tool_to_hand_translation=np.array(
-            params.get("tool_to_hand_translation", [0.0, 0.0, 0.0]),
-            dtype=np.float32,
-        ),
-        tool_to_hand_quat_xyzw=normalized_quat_xyzw(
-            np.array(
-                params.get("tool_to_hand_quat_xyzw", [0.0, 0.0, 0.0, 1.0]),
-                dtype=np.float32,
-            )
-        ),
-    )
-
-
-def load_arm_qpos_from_snapshot(snapshot_path: Optional[Path]) -> Optional[np.ndarray]:
-    if snapshot_path is None:
-        return None
-    if not snapshot_path.exists():
-        return None
-    try:
-        data = json.loads(snapshot_path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-    arm_qpos = data.get("arm_qpos")
-    if not isinstance(arm_qpos, list) or len(arm_qpos) < 6:
-        return None
-    try:
-        return np.array(arm_qpos[:6], dtype=np.float32)
-    except (TypeError, ValueError):
-        return None
-
-
-def override_config_joint_seed_from_snapshot(
-    config: HybridConfig,
-    snapshot_path: Optional[Path],
-    *,
-    override_initial: bool = True,
-    override_nominal: bool = True,
-    log_prefix: str = "",
-) -> HybridConfig:
-    arm_qpos = load_arm_qpos_from_snapshot(snapshot_path)
-    if arm_qpos is None:
-        return config
-    updates = {}
-    if override_initial:
-        updates["initial_joint_positions"] = arm_qpos.copy()
-    if override_nominal:
-        updates["nominal_joint_positions"] = arm_qpos.copy()
-    if not updates:
-        return config
-    prefix = f"{log_prefix} " if log_prefix else ""
-    print(
-        f"{prefix}Using startup snapshot as joint seed:"
-        f" path={snapshot_path}"
-        f" arm_qpos={np.round(arm_qpos, 4).tolist()}"
-    )
-    return replace(config, **updates)
-
-
-def quat_xyzw_to_matrix(quat: np.ndarray) -> np.ndarray:
-    x, y, z, w = normalized_quat_xyzw(quat)
-    return np.array(
-        [
-            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-        ],
-        dtype=np.float32,
-    )
-
-
-def matrix_to_quat_xyzw(rotation: np.ndarray) -> np.ndarray:
-    trace = float(np.trace(rotation))
-    if trace > 0.0:
-        s = np.sqrt(trace + 1.0) * 2.0
-        w = 0.25 * s
-        x = (rotation[2, 1] - rotation[1, 2]) / s
-        y = (rotation[0, 2] - rotation[2, 0]) / s
-        z = (rotation[1, 0] - rotation[0, 1]) / s
-    else:
-        index = int(np.argmax(np.diag(rotation)))
-        if index == 0:
-            s = np.sqrt(1.0 + rotation[0, 0] - rotation[1, 1] - rotation[2, 2]) * 2.0
-            w = (rotation[2, 1] - rotation[1, 2]) / s
-            x = 0.25 * s
-            y = (rotation[0, 1] + rotation[1, 0]) / s
-            z = (rotation[0, 2] + rotation[2, 0]) / s
-        elif index == 1:
-            s = np.sqrt(1.0 + rotation[1, 1] - rotation[0, 0] - rotation[2, 2]) * 2.0
-            w = (rotation[0, 2] - rotation[2, 0]) / s
-            x = (rotation[0, 1] + rotation[1, 0]) / s
-            y = 0.25 * s
-            z = (rotation[1, 2] + rotation[2, 1]) / s
-        else:
-            s = np.sqrt(1.0 + rotation[2, 2] - rotation[0, 0] - rotation[1, 1]) * 2.0
-            w = (rotation[1, 0] - rotation[0, 1]) / s
-            x = (rotation[0, 2] + rotation[2, 0]) / s
-            y = (rotation[1, 2] + rotation[2, 1]) / s
-            z = 0.25 * s
-    return normalized_quat_xyzw(np.array([x, y, z, w], dtype=np.float32))
-
-
-def rotation_matrix_to_rotvec(rotation: np.ndarray) -> np.ndarray:
-    cos_angle = float(np.clip((np.trace(rotation) - 1.0) * 0.5, -1.0, 1.0))
-    angle = float(np.arccos(cos_angle))
-    if angle < 1e-6:
-        return np.zeros(3, dtype=np.float32)
-    axis = np.array(
-        [
-            rotation[2, 1] - rotation[1, 2],
-            rotation[0, 2] - rotation[2, 0],
-            rotation[1, 0] - rotation[0, 1],
-        ],
-        dtype=np.float32,
-    )
-    axis_norm = float(np.linalg.norm(axis))
-    if axis_norm < 1e-9:
-        return np.zeros(3, dtype=np.float32)
-    axis /= axis_norm
-    return axis * angle
-
-
-def rotvec_to_matrix(rotvec: np.ndarray) -> np.ndarray:
-    angle = float(np.linalg.norm(rotvec))
-    if angle < 1e-9:
-        return np.eye(3, dtype=np.float32)
-    axis = rotvec / angle
-    x, y, z = axis
-    c = np.cos(angle)
-    s = np.sin(angle)
-    one_c = 1.0 - c
-    return np.array(
-        [
-            [c + x * x * one_c, x * y * one_c - z * s, x * z * one_c + y * s],
-            [y * x * one_c + z * s, c + y * y * one_c, y * z * one_c - x * s],
-            [z * x * one_c - y * s, z * y * one_c + x * s, c + z * z * one_c],
-        ],
-        dtype=np.float32,
-    )
-
-
-def scale_rotation_matrix(rotation: np.ndarray, scale: float) -> np.ndarray:
-    return rotvec_to_matrix(rotation_matrix_to_rotvec(rotation) * scale)
-
-
-def low_pass_vector(previous: Optional[np.ndarray], current: np.ndarray, alpha: float) -> np.ndarray:
-    if previous is None or alpha >= 1.0:
-        return current.copy()
-    if alpha <= 0.0:
-        return previous.copy()
-    return previous + alpha * (current - previous)
-
-
-def low_pass_quat_xyzw(previous: Optional[np.ndarray], current: np.ndarray, alpha: float) -> np.ndarray:
-    current_norm = normalized_quat_xyzw(current)
-    if previous is None or alpha >= 1.0:
-        return current_norm
-    if alpha <= 0.0:
-        return normalized_quat_xyzw(previous)
-    prev_norm = normalized_quat_xyzw(previous)
-    if float(np.dot(prev_norm, current_norm)) < 0.0:
-        current_norm = -current_norm
-    blended = prev_norm + alpha * (current_norm - prev_norm)
-    return normalized_quat_xyzw(blended)
-
-
-def smooth_rotation_matrix(
-    previous: Optional[np.ndarray],
-    target: np.ndarray,
-    gain: float,
-) -> np.ndarray:
-    if previous is None or gain >= 1.0:
-        return target.copy()
-    if gain <= 0.0:
-        return previous.copy()
-    relative_rotation = target @ previous.T
-    return rotvec_to_matrix(rotation_matrix_to_rotvec(relative_rotation) * gain) @ previous
-
-
-def limit_vector(vector: np.ndarray, max_norm: float) -> np.ndarray:
-    norm = float(np.linalg.norm(vector))
-    if norm <= max_norm or norm < 1e-9:
-        return vector.copy()
-    return vector * (max_norm / norm)
-
-
-def make_quest_to_robot_matrix(axis_mapping: str) -> np.ndarray:
-    if axis_mapping == "cube_forward":
-        return np.array([[0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "quest3_teleop":
-        return np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "quest3_teleop_flip_forward":
-        return np.array([[0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "quest3_teleop_flip_forward_up_y_left_z":
-        return np.array([[0.0, 0.0, -1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "quest3_front_x_left_y_up_z":
-        return np.array([[0.0, 0.0, -1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "base_y_left":
-        return np.array([[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "base_y_left_flip_forward":
-        return np.array([[0.0, 0.0, -1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "base_z_right":
-        return np.array([[1.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "base_z_left":
-        return np.array([[-1.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "wrist_left_to_base_x_right_y_forward_z_up":
-        # Wrist visual axes: +X red right, +Y green up, +Z blue forward.
-        # Robot base axes: +X red right, +Y green forward, +Z blue up.
-        # This maps wrist +X -> base +X, wrist +Y -> base +Z,
-        # wrist +Z -> base +Y. The matrix is an improper orthogonal
-        # coordinate transform because the wrist frame is left-handed here.
-        return np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "wrist_left_rotation_xz_unswap":
-        # Rotation-only correction for the left-wrist frame above. It is the
-        # position mapping composed with an X/Z pre-swap, giving a proper
-        # rotation matrix so wrist X/Z rotation axes are not interchanged.
-        return np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "wrist_left_rotation_xz_unswap_flip_blue":
-        # Same axis pairing as wrist_left_rotation_xz_unswap, but flips the
-        # wrist blue-axis rotation direction. Green flips with it so the
-        # matrix remains a proper rotation (det=+1) for quaternion mapping.
-        return np.array([[0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, -1.0, 0.0]], dtype=np.float32)
-    if axis_mapping == "identity":
-        return np.eye(3, dtype=np.float32)
-    raise ValueError(f"Unsupported axis_mapping: {axis_mapping}")
-
-
-def is_vr_teleop_rotation_mapping(axis_mapping: str) -> bool:
-    return axis_mapping in (
-        "vr_teleop_sim",
-        "vr_teleop_realman",
-        "vr_teleop_quest3_raw",
-        "vr_teleop_left",
-        "vr_teleop_left_sim",
-        "vr_teleop_left_realman",
-    )
-
-
-def mirror_left_wrist_quat_to_right_like(quat_xyzw: np.ndarray) -> np.ndarray:
-    # Quest left-wrist +X points anatomically left; mirror X so it follows
-    # the right-wrist convention expected by vr_teleop's RM65 examples.
-    qx, qy, qz, qw = normalized_quat_xyzw(quat_xyzw)
-    return np.array([qx, -qy, -qz, qw], dtype=np.float32)
-
-
-def vr_teleop_sim_rotation_to_robot(quat_xyzw: np.ndarray) -> np.ndarray:
-    wrist_rotation = quat_xyzw_to_matrix(quat_xyzw)
-    rotation_transform = np.array(
-        [[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]],
-        dtype=np.float32,
-    )
-    return rotation_transform @ wrist_rotation @ rotation_transform.T
-
-
-def vr_teleop_realman_rotation_to_robot(quat_xyzw: np.ndarray) -> np.ndarray:
-    qx, qy, qz, qw = normalized_quat_xyzw(quat_xyzw)
-    wrist_quat = np.array([qz, qy, -qx, qw], dtype=np.float32)
-    wrist_rotation = quat_xyzw_to_matrix(wrist_quat)
-    rotation_transform = np.array(
-        [[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]],
-        dtype=np.float32,
-    )
-    return rotation_transform @ wrist_rotation @ rotation_transform.T
-
-
-def vr_teleop_left_sim_rotation_to_robot(quat_xyzw: np.ndarray) -> np.ndarray:
-    return vr_teleop_sim_rotation_to_robot(
-        mirror_left_wrist_quat_to_right_like(quat_xyzw)
-    )
-
-
-def vr_teleop_left_realman_rotation_to_robot(quat_xyzw: np.ndarray) -> np.ndarray:
-    return vr_teleop_realman_rotation_to_robot(
-        mirror_left_wrist_quat_to_right_like(quat_xyzw)
-    )
-
-
-def quest_rotation_to_robot(
-    quat_xyzw: np.ndarray,
-    quest_to_robot: np.ndarray,
-    rotation_axis_mapping: str = "",
-) -> np.ndarray:
-    if rotation_axis_mapping in ("vr_teleop_left", "vr_teleop_left_sim"):
-        return vr_teleop_left_sim_rotation_to_robot(quat_xyzw)
-    if rotation_axis_mapping == "vr_teleop_left_realman":
-        return vr_teleop_left_realman_rotation_to_robot(quat_xyzw)
-    if rotation_axis_mapping == "vr_teleop_sim":
-        return vr_teleop_sim_rotation_to_robot(quat_xyzw)
-    if is_vr_teleop_rotation_mapping(rotation_axis_mapping):
-        return vr_teleop_realman_rotation_to_robot(quat_xyzw)
-    quest_rotation = quat_xyzw_to_matrix(quat_xyzw)
-    return quest_to_robot @ quest_rotation @ quest_to_robot.T
-
-
-def maybe_negate_relative_rot_xy(rotation: np.ndarray, enabled: bool) -> np.ndarray:
-    if not enabled:
-        return rotation
-    quat = matrix_to_quat_xyzw(rotation)
-    quat[0] = -quat[0]
-    quat[1] = -quat[1]
-    return quat_xyzw_to_matrix(quat)
-
-
-def parse_landmark_array(landmarks_value: object) -> Optional[np.ndarray]:
-    if landmarks_value is None:
-        return None
-    try:
-        landmarks = np.array(landmarks_value, dtype=np.float32)
-    except (TypeError, ValueError):
-        return None
-    if landmarks.shape != (21, 3):
-        return None
-    return landmarks
-
-
-def parse_wrist_packet(data: bytes) -> Optional[tuple[np.ndarray, Optional[np.ndarray]]]:
-    text = data.decode("utf-8", errors="ignore").strip()
-    if not text:
-        return None
-    try:
-        packet = json.loads(text)
-        wrist = np.array(packet["wrist_pose"], dtype=np.float32)
-        landmarks = parse_landmark_array(packet.get("landmarks"))
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-        try:
-            values = [float(v.strip()) for v in text.split(":", 1)[1].split(",") if v.strip()]
-            wrist = np.array(values, dtype=np.float32)
-            landmarks = None
-        except (IndexError, ValueError):
-            return None
-    return (wrist, landmarks) if wrist.shape[0] >= 7 else None
-
-
-def parse_hand_qpos_packet(data: bytes) -> Optional[np.ndarray]:
-    text = data.decode("utf-8", errors="ignore").strip()
-    if not text:
-        return None
-    try:
-        packet = json.loads(text)
-        qpos = np.array(packet["hand_qpos"], dtype=np.float32)
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-        return None
-    return qpos if qpos.shape[0] >= 6 else None
-
-
-def poll_latest_packet(sock: socket.socket, parser):
-    latest = None
-    try:
-        while True:
-            packet, _ = sock.recvfrom(65535)
-            parsed = parser(packet)
-            if parsed is not None:
-                latest = parsed
-    except BlockingIOError:
-        pass
-    return latest
+# Re-export the split modules through this legacy entry point so existing
+# v1/MuJoCo/RealMan scripts keep their current import paths.
+from teleop_core.config import (  # noqa: E402
+    HybridConfig,
+    load_arm_qpos_from_snapshot,
+    load_hybrid_config,
+    override_config_joint_seed_from_snapshot,
+)
+from teleop_core.constants import (  # noqa: E402
+    ARM_JOINT_NAMES,
+    CUBE_SIDE_MOUNT_CONFIG_PATH,
+    DEFAULT_CONFIG_PATH,
+    DEFAULT_WRIST_REGULARIZATION_JOINTS,
+    HAND_ACTUATED_JOINT_NAMES,
+    HAND_MIMIC_RULES,
+    RM65_JOINT_LIMIT_MAX,
+    RM65_JOINT_LIMIT_MIN,
+)
+from teleop_core.mapping import (  # noqa: E402
+    is_vr_teleop_rotation_mapping,
+    make_quest_to_robot_matrix,
+    maybe_negate_relative_rot_xy,
+    mirror_left_wrist_quat_to_right_like,
+    quest_rotation_to_robot,
+    vr_teleop_left_realman_rotation_to_robot,
+    vr_teleop_left_sim_rotation_to_robot,
+    vr_teleop_realman_rotation_to_robot,
+    vr_teleop_sim_rotation_to_robot,
+)
+from teleop_core.math_utils import (  # noqa: E402
+    limit_vector,
+    low_pass_quat_xyzw,
+    low_pass_vector,
+    matrix_to_quat_xyzw,
+    normalized_quat_xyzw,
+    quat_xyzw_to_matrix,
+    rotation_matrix_to_rotvec,
+    rotvec_to_matrix,
+    scale_rotation_matrix,
+    smooth_rotation_matrix,
+)
+from teleop_core.udp_packets import (  # noqa: E402
+    parse_hand_qpos_packet,
+    parse_landmark_array,
+    parse_wrist_packet,
+    poll_latest_packet,
+)
 
 
 class HybridArmController:
