@@ -1,0 +1,4 @@
+[submodule "assets"]
+	path = assets
+	url = https://github.com/wengmister/dex-urdf-plus.git
+	branch = main

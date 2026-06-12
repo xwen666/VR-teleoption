@@ -1,0 +1,44 @@
+# large files
+realman/ros_ruierman/rm_install/Miniconda3-latest-Linux-x86_64.sh
+Quest3-Teleoperation/media/episode_video.gif
+Quest3-Teleoperation/media/*.mp4
+
+# common large files
+*.bag
+*.db3
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# datasets / outputs / weights
+data/
+datasets/
+recordings/
+checkpoints/
+weights/
+runs/
+outputs/
+logs/
+
+# python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# env
+.venv/
+venv/
+.env
+
+# editor / local runtime
+.vscode/
+*.log
+realman/log/
+rm65_dex_docker/logs/
+MUJOCO_LOG.TXT

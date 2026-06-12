@@ -1,0 +1,49 @@
+joint_limits:
+  joint1:
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: false
+  joint2:
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: false
+  joint3:
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+  joint4:
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+  joint5:
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+  joint6:
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+  hand_thumb_metacarpal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.6175
+    has_acceleration_limits: false
+  hand_thumb_proximal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.5303
+    has_acceleration_limits: false
+  hand_index_proximal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.2685
+    has_acceleration_limits: false
+  hand_middle_proximal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.2685
+    has_acceleration_limits: false
+  hand_ring_proximal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.2685
+    has_acceleration_limits: false
+  hand_pinky_proximal_joint:
+    has_velocity_limits: true
+    max_velocity: 2.2685
+    has_acceleration_limits: false

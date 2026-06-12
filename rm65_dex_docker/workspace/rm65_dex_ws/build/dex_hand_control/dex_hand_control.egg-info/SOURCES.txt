@@ -1,0 +1,15 @@
+package.xml
+setup.cfg
+setup.py
+config/revo2_left_qpos.yaml
+dex_hand_control/__init__.py
+dex_hand_control/hand_qpos_node.py
+dex_hand_control.egg-info/PKG-INFO
+dex_hand_control.egg-info/SOURCES.txt
+dex_hand_control.egg-info/dependency_links.txt
+dex_hand_control.egg-info/entry_points.txt
+dex_hand_control.egg-info/requires.txt
+dex_hand_control.egg-info/top_level.txt
+dex_hand_control.egg-info/zip-safe
+launch/revo2_left_hand_qpos.launch.py
+resource/dex_hand_control

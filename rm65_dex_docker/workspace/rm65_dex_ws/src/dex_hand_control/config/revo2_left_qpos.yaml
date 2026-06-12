@@ -1,0 +1,7 @@
+hand_qpos_node:
+  ros__parameters:
+    port: 5010
+    controller_topic: /hand_position_controller/commands
+    max_delta: 0.08
+    lower: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    upper: [1.57, 1.03, 1.41, 1.41, 1.41, 1.41]

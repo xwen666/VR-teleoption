@@ -1,0 +1,1 @@
+/workspace/rm65_dex_ws/src/rm65_dex_moveit_config/launch/rsp.launch.py

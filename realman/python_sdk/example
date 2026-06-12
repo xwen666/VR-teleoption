@@ -1,0 +1,21 @@
+episode_step = {
+    "observation.images.front": front_rgb,      # uint8 HWC 或保存成视频流
+    # "observation.images.wrist": wrist_rgb,
+
+    "observation.state": [
+        q1_rad, q2_rad, q3_rad, q4_rad, q5_rad, q6_rad,
+        gripper_open
+    ],
+
+    "action": [
+        q1_cmd_rad, q2_cmd_rad, q3_cmd_rad, q4_cmd_rad, q5_cmd_rad, q6_cmd_rad,
+        gripper_cmd
+    ],
+
+    "observation.ee_pose": [
+        x_m, y_m, z_m, rx_rad, ry_rad, rz_rad
+    ],
+
+    "timestamp": t_sec,
+    "task": "pick up the cup"
+}

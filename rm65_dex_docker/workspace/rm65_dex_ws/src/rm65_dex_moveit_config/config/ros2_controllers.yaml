@@ -1,0 +1,34 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: forward_command_controller/ForwardCommandController
+
+    hand_position_controller:
+      type: forward_command_controller/ForwardCommandController
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+    interface_name: position
+
+hand_position_controller:
+  ros__parameters:
+    joints:
+      - hand_thumb_metacarpal_joint
+      - hand_thumb_proximal_joint
+      - hand_index_proximal_joint
+      - hand_middle_proximal_joint
+      - hand_ring_proximal_joint
+      - hand_pinky_proximal_joint
+    interface_name: position

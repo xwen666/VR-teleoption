@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Placeholder only. Replace this macro with the official Realman RM65-B-V URDF/Xacro. -->
+  <xacro:macro name="rm65_b_v" params="prefix:='rm65_'">
+    <link name="${prefix}base_link">
+      <visual>
+        <origin xyz="0 0 0.03"/>
+        <geometry><box size="0.18 0.18 0.06"/></geometry>
+        <material name="rm65_gray"><color rgba="0.45 0.48 0.52 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.03"/>
+        <geometry><box size="0.18 0.18 0.06"/></geometry>
+      </collision>
+    </link>
+
+    <xacro:property name="link_len" value="0.16"/>
+    <xacro:property name="link_rad" value="0.025"/>
+
+    <xacro:macro name="rm65_link" params="name z">
+      <link name="${name}">
+        <visual>
+          <origin xyz="0 0 ${z / 2.0}"/>
+          <geometry><cylinder radius="${link_rad}" length="${z}"/></geometry>
+          <material name="rm65_link_blue"><color rgba="0.15 0.28 0.75 1"/></material>
+        </visual>
+        <collision>
+          <origin xyz="0 0 ${z / 2.0}"/>
+          <geometry><cylinder radius="${link_rad}" length="${z}"/></geometry>
+        </collision>
+        <inertial>
+          <origin xyz="0 0 ${z / 2.0}"/>
+          <mass value="0.5"/>
+          <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+        </inertial>
+      </link>
+    </xacro:macro>
+
+    <xacro:rm65_link name="${prefix}link1" z="${link_len}"/>
+    <xacro:rm65_link name="${prefix}link2" z="${link_len}"/>
+    <xacro:rm65_link name="${prefix}link3" z="${link_len}"/>
+    <xacro:rm65_link name="${prefix}link4" z="${link_len}"/>
+    <xacro:rm65_link name="${prefix}link5" z="${link_len}"/>
+    <xacro:rm65_link name="${prefix}link6" z="${link_len}"/>
+    <link name="${prefix}tool0"/>
+
+    <joint name="${prefix}joint1" type="revolute">
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}link1"/>
+      <origin xyz="0 0 0.06"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="-3.14" upper="3.14" effort="50" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}joint2" type="revolute">
+      <parent link="${prefix}link1"/>
+      <child link="${prefix}link2"/>
+      <origin xyz="0 0 ${link_len}"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-2.2" upper="2.2" effort="50" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}joint3" type="revolute">
+      <parent link="${prefix}link2"/>
+      <child link="${prefix}link3"/>
+      <origin xyz="0 0 ${link_len}"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-2.2" upper="2.2" effort="50" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}joint4" type="revolute">
+      <parent link="${prefix}link3"/>
+      <child link="${prefix}link4"/>
+      <origin xyz="0 0 ${link_len}"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="-3.14" upper="3.14" effort="30" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}joint5" type="revolute">
+      <parent link="${prefix}link4"/>
+      <child link="${prefix}link5"/>
+      <origin xyz="0 0 ${link_len}"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-2.2" upper="2.2" effort="30" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}joint6" type="revolute">
+      <parent link="${prefix}link5"/>
+      <child link="${prefix}link6"/>
+      <origin xyz="0 0 ${link_len}"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="-3.14" upper="3.14" effort="20" velocity="2.0"/>
+    </joint>
+    <joint name="${prefix}tool0_fixed" type="fixed">
+      <parent link="${prefix}link6"/>
+      <child link="${prefix}tool0"/>
+      <origin xyz="0 0 ${link_len}"/>
+    </joint>
+  </xacro:macro>
+</robot>

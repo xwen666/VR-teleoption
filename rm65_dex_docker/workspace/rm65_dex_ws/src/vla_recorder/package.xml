@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>vla_recorder</name>
+  <version>0.0.1</version>
+  <description>Smoke recorder for robot state/action/image synchronization checks.</description>
+  <maintainer email="xwen@example.com">xwen</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,6 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: rm65_dex_description
+    relative_path: urdf/rm65_b_v_dexhand.urdf.xacro
+  srdf:
+    relative_path: config/rm65_b_v_dexhand.srdf

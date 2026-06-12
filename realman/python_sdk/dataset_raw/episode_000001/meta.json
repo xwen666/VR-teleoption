@@ -1,0 +1,33 @@
+{
+  "task": "pick up the cup",
+  "camera_name": "front",
+  "image_width": 640,
+  "image_height": 480,
+  "camera_fps": 30,
+  "robot_state_hz": 100.0,
+  "image_format": "jpg",
+  "image_dir": "front",
+  "timestamp_unit": "seconds",
+  "robot_joint_unit": "degree",
+  "robot_pose_unit": {
+    "xyz": "meter",
+    "rxyz": "radian"
+  },
+  "hand_joint_unit": "radian",
+  "hand_joint_labels": [
+    "thumb_flex",
+    "thumb_aux",
+    "index",
+    "middle",
+    "ring",
+    "pinky"
+  ],
+  "hand_sampling_hz": 100.0,
+  "hand_device_id": 126,
+  "hand_actual_position_register_range": [
+    2000,
+    2005
+  ],
+  "hand_mode_register": 937,
+  "hand_mode_note": "unit_mode=0 uses min/max angle mapping; unit_mode=1 uses physical-angle registers scaled by 0.1 degree"
+}

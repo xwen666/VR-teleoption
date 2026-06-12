@@ -1,0 +1,60 @@
+wrist_ik_bridge:
+  ros__parameters:
+    port: 5005
+    axis_mapping: base_y_left
+    position_scale: 1.0
+    rotation_scale: 0.5
+    position_target_mode: absolute
+    position_lpf_alpha: 0.6
+    rotation_lpf_alpha: 0.12
+    joint_lpf_alpha: 1.0
+    packet_timeout: 0.15
+    max_position_offset: 0.6
+    max_rotation_error: 1.0
+    max_joint_step: 0.004
+    max_joint_step_per_joint: [0.004, 0.004, 0.004, 0.004, 0.004, 0.004]
+    trajectory_time: 0.05
+    command_out_type: std_msgs/Float64MultiArray
+    controller_topic: /arm_controller/commands
+    joint_state_topic: /joint_states
+    realman_lib_path: ""
+    robot_model: rm65
+    use_orientation: false
+    arm_solver_mode: local_dls
+    rotation_control_mode: disabled
+    orientation_target_mode: relative
+    orientation_fallback_to_position_only: true
+    block_singularity: true
+    dls_damping: 0.12
+    dls_position_gain: 0.35
+    dls_iterations: 2
+    dls_fk_epsilon: 0.0005
+    dls_position_tolerance: 0.002
+    dls_orientation_tolerance: 0.05
+    dls_centering_gain: 0.04
+    dls_max_delta_per_joint: [0.03, 0.035, 0.03, 0.04, 0.04, 0.05]
+    dls_singularity_threshold: 0.12
+    current_q_regularization_weight: 0.12
+    posture_regularization_weight: 0.05
+    joint_limit_weight: 0.02
+    wrist_regularization_weight: 0.04
+    wrist_regularization_joints: [3, 4, 5] # zero-based -> joint4/5/6
+    joint_limit_min: [-3.1, -2.268, -2.355, -3.1, -2.233, -6.28]
+    joint_limit_max: [3.1, 2.268, 2.355, 3.1, 2.233, 6.28]
+    reset_to_initial_pose: true
+    initial_joint_positions: [-3.0646056, -1.65593507, 2.091548, 3.0788801, -1.1148308, 3.2102351]
+    nominal_joint_positions: [-3.0646056, -1.65593507, 2.091548, 3.0788801, -1.1148308, 3.2102351]
+    startup_reset_duration: 2.0
+    startup_reset_tolerance: 0.015
+    trajectory_smoother: auto
+    trajectory_control_dt: 0.01
+  
+    ruckig_max_velocity: [0.10, 0.10, 0.10, 0.20, 0.20, 0.20]
+    ruckig_max_acceleration: [0.20, 0.20, 0.20, 0.40, 0.40, 0.40]
+    ruckig_max_jerk: [0.80, 0.80, 0.80, 1.60, 1.60, 1.60]
+    wrist_to_hand_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    tool_to_hand_translation: [0.0, 0.0, 0.0]
+    tool_to_hand_quat_xyzw: [0.0, 0.0, 0.0, 1.0]
+    singularity_log_period: 1.0
+    debug_log_period: 1.0
+    debug_log_file: /logs/wrist_io_debug.txt

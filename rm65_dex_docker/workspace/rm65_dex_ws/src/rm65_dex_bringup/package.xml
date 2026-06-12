@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rm65_dex_bringup</name>
+  <version>0.0.1</version>
+  <description>Launch and config helpers for RM65 + dex hand MVP.</description>
+  <maintainer email="xwen@example.com">xwen</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>moveit_servo</exec_depend>
+  <exec_depend>rm65_dex_moveit_config</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

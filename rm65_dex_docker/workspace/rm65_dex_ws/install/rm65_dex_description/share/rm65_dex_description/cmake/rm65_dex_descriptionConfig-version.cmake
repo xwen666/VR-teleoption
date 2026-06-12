@@ -1,0 +1,1 @@
+/workspace/rm65_dex_ws/build/rm65_dex_description/ament_cmake_core/rm65_dex_descriptionConfig-version.cmake

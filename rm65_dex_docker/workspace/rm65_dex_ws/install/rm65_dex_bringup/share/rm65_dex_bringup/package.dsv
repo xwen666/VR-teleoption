@@ -1,0 +1,9 @@
+source;share/rm65_dex_bringup/hook/pythonpath.ps1
+source;share/rm65_dex_bringup/hook/pythonpath.dsv
+source;share/rm65_dex_bringup/hook/pythonpath.sh
+source;share/rm65_dex_bringup/hook/ament_prefix_path.ps1
+source;share/rm65_dex_bringup/hook/ament_prefix_path.dsv
+source;share/rm65_dex_bringup/hook/ament_prefix_path.sh
+source;../../build/rm65_dex_bringup/share/rm65_dex_bringup/hook/pythonpath_develop.ps1
+source;../../build/rm65_dex_bringup/share/rm65_dex_bringup/hook/pythonpath_develop.dsv
+source;../../build/rm65_dex_bringup/share/rm65_dex_bringup/hook/pythonpath_develop.sh

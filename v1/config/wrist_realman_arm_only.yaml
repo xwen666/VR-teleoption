@@ -1,0 +1,147 @@
+wrist_ik_bridge:
+  ros__parameters:
+    scene_variant: realman_arm_only
+    port: 5005
+    axis_mapping: wrist_left_to_base_x_right_y_forward_z_up
+    rotation_axis_mapping: wrist_left_rotation_xz_unswap_flip_blue
+    position_scale: 1.5
+    rotation_scale: 0.6
+    position_target_mode: absolute
+    position_lpf_alpha: 0.75
+    rotation_lpf_alpha: 0.35
+    pre_ik_position_gain: 0.08
+    pre_ik_rotation_gain: 0.08
+    joint_lpf_alpha: 1.0
+    packet_timeout: 0.25
+    max_position_offset: 0.6
+    max_rotation_error: 1.2
+    max_joint_step: 0.0
+    max_joint_step_per_joint:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    trajectory_time: 0.03
+    command_out_type: std_msgs/Float64MultiArray
+    controller_topic: /arm_controller/commands
+    joint_state_topic: /joint_states
+    realman_lib_path: ''
+    robot_model: rm65
+    use_orientation: true
+    arm_solver_mode: local_dls
+    rotation_control_mode: full_pose
+    orientation_input_source: wrist_quaternion
+    hybrid_pose_rotation_scale: 0.0
+    orientation_target_mode: relative
+    negate_rot_xy: false
+    orientation_debug: true
+    orientation_fallback_to_position_only: true
+    orientation_deadband_rad: 0.03
+    block_singularity: false
+    max_ik_jump_norm: 3.0
+    max_ik_jump_per_joint:
+    - 1.5
+    - 2.6
+    - 1.5
+    - 1.6
+    - 1.6
+    - 2.0
+    dls_damping: 0.15
+    dls_position_gain: 0.55
+    dls_iterations: 3
+    dls_fk_epsilon: 0.0005
+    dls_position_tolerance: 0.002
+    dls_orientation_tolerance: 0.05
+    dls_centering_gain: 0.03
+    dls_max_delta_per_joint:
+    - 0.03
+    - 0.035
+    - 0.03
+    - 0.035
+    - 0.035
+    - 0.04
+    dls_singularity_threshold: 0.001
+    current_q_regularization_weight: 1.0
+    posture_regularization_weight: 0.25
+    joint_limit_weight: 0.2
+    wrist_regularization_weight: 0.3
+    wrist_regularization_joints:
+    - 3
+    - 4
+    - 5
+    joint_limit_min:
+    - -3.1
+    - -2.268
+    - -2.355
+    - -3.1
+    - -2.233
+    - -1000.0
+    joint_limit_max:
+    - 3.1
+    - 2.268
+    - 2.355
+    - 3.1
+    - 2.233
+    - 1000.0
+    reset_to_initial_pose: false
+    initial_joint_positions:
+    - -3.0646056
+    - -1.65593507
+    - 2.091548
+    - 3.0788801
+    - -1.1148308
+    - 3.2102351
+    nominal_joint_positions:
+    - -3.0646056
+    - -1.65593507
+    - 2.091548
+    - 3.0788801
+    - -1.1148308
+    - 3.2102351
+    startup_reset_duration: 0.0
+    startup_reset_tolerance: 0.015
+    joint6_axis: z
+    joint6_scale: 1.0
+    joint6_min: -1000.0
+    joint6_max: 1000.0
+    joint6_deadband_rad: 0.01
+    max_joint6_step: 0.06
+    trajectory_smoother: auto
+    trajectory_control_dt: 0.01
+    ruckig_max_velocity:
+    - 0.4
+    - 0.4
+    - 0.4
+    - 0.8
+    - 0.8
+    - 0.8
+    ruckig_max_acceleration:
+    - 0.4
+    - 0.4
+    - 0.4
+    - 0.8
+    - 0.8
+    - 0.8
+    ruckig_max_jerk:
+    - 1.5
+    - 1.5
+    - 1.5
+    - 3.0
+    - 3.0
+    - 3.0
+    wrist_to_hand_quat_xyzw:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+    tool_to_hand_translation:
+    - 0.0
+    - 0.0
+    - 0.0
+    tool_to_hand_quat_xyzw:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0

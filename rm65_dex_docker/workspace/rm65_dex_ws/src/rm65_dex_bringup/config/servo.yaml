@@ -1,0 +1,28 @@
+moveit_servo:
+  ros__parameters:
+    move_group_name: arm
+    planning_frame: base_link
+    ee_frame_name: rm65_tool0
+
+    command_in_type: "speed_units"
+    scale:
+      linear: 1.00
+      rotational: 1.00
+      joint: 0.30
+
+    publish_period: 0.01
+    incoming_command_timeout: 0.2
+
+    lower_singularity_threshold: 50.0
+    hard_stop_singularity_threshold: 100.0
+    leaving_singularity_threshold_multiplier: 2.0
+    joint_limit_margin: 0.1
+
+    collision_check_rate: 10.0
+    self_collision_proximity_threshold: 0.05
+    scene_collision_proximity_threshold: 0.05
+    low_latency_mode: true
+
+    status_topic: "~/status"
+    command_out_topic: "/arm_controller/joint_trajectory"
+    command_out_type: trajectory_msgs/JointTrajectory

@@ -1,0 +1,13 @@
+package.xml
+setup.cfg
+setup.py
+resource/vla_recorder
+vla_recorder/__init__.py
+vla_recorder/smoke_recorder.py
+vla_recorder.egg-info/PKG-INFO
+vla_recorder.egg-info/SOURCES.txt
+vla_recorder.egg-info/dependency_links.txt
+vla_recorder.egg-info/entry_points.txt
+vla_recorder.egg-info/requires.txt
+vla_recorder.egg-info/top_level.txt
+vla_recorder.egg-info/zip-safe

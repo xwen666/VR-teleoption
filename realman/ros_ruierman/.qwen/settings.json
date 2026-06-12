@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/xwen/**)",
+      "Bash(source *)",
+      "Bash(pip install *)",
+      "Bash(conda *)",
+      "Bash(docker ps *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "$version": 3
+}

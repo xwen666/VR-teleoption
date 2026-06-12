@@ -1,0 +1,30 @@
+services:
+  rm65_dex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: rm65_dex_ros2:humble
+    container_name: rm65_dex_ros2
+    network_mode: host
+    ipc: host
+    privileged: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - RUCKIG_SOURCE_DIR=/workspace/ruckig
+    volumes:
+      - ./workspace:/workspace
+      - ../ruckig:/workspace/ruckig:rw
+      - ./data:/data
+      - ./logs:/logs
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    devices:
+      - /dev/dri:/dev/dri
+    stdin_open: true
+    tty: true

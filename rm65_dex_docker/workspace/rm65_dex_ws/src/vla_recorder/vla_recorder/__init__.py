@@ -1,0 +1,1 @@
+"""VLA smoke recorder package."""

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>quest_bridge</name>
+  <version>0.0.1</version>
+  <description>Quest wrist/controller socket bridge for MoveIt Servo.</description>
+  <maintainer email="xwen@example.com">xwen</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
