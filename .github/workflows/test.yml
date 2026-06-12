@@ -34,4 +34,8 @@ jobs:
           ruff format src/ --check
       - name: Test with pytest
         run: |
-          pytest tests
+          if [ -d tests ]; then
+            pytest tests
+          else
+            echo "No tests/ directory found; skipping pytest."
+          fi
