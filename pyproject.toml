@@ -63,3 +63,10 @@ line-length = 88
 [tool.pytest.ini_options]
 addopts = "--disable-warnings"
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+norecursedirs = [
+    "BrainCo-Revo2-Dex-Retargeting",
+    "brainco-hand-sdk",
+    "realman",
+    "vr_teleop/third_party",
+]
