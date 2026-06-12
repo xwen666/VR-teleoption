@@ -1,3 +1,0 @@
-[console_scripts]
-smoke_recorder = vla_recorder.smoke_recorder:main
-

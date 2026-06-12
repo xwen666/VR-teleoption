@@ -1,4 +1,0 @@
-[console_scripts]
-wrist_ik_bridge = quest_bridge.wrist_ik_bridge:main
-wrist_twist_bridge = quest_bridge.wrist_twist_bridge:main
-

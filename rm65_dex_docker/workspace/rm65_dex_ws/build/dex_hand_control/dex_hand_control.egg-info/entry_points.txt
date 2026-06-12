@@ -1,3 +1,0 @@
-[console_scripts]
-hand_qpos_node = dex_hand_control.hand_qpos_node:main
-

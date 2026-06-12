@@ -1,1 +1,0 @@
-/workspace/rm65_dex_ws/src/rm_description/launch/rm_65_6fb_display.launch.py

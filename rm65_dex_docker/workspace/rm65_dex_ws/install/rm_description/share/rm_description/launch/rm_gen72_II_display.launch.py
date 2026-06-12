@@ -1,1 +1,0 @@
-/workspace/rm65_dex_ws/src/rm_description/launch/rm_gen72_II_display.launch.py

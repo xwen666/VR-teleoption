@@ -25,6 +25,17 @@ weights/
 runs/
 outputs/
 logs/
+log/
+
+# ROS / colcon generated workspaces
+build/
+install/
+rm65_dex_docker/workspace/rm65_dex_ws/build/
+rm65_dex_docker/workspace/rm65_dex_ws/install/
+rm65_dex_docker/workspace/rm65_dex_ws/log/
+realman/ros_ruierman/rm_install/scripts/build/
+realman/ros_ruierman/rm_install/scripts/install/
+realman/ros_ruierman/rm_install/scripts/log/
 
 # python cache
 __pycache__/

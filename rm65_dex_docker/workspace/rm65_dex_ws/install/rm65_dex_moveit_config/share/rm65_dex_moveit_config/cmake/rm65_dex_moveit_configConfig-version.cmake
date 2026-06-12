@@ -1,1 +1,0 @@
-/workspace/rm65_dex_ws/build/rm65_dex_moveit_config/ament_cmake_core/rm65_dex_moveit_configConfig-version.cmake

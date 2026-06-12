@@ -1,1 +1,0 @@
-/workspace/rm65_dex_ws/src/dex_hand_control/launch/revo2_left_hand_qpos.launch.py

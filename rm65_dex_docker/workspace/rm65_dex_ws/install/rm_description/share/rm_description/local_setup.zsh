@@ -1,1 +1,0 @@
-/workspace/rm65_dex_ws/build/rm_description/ament_cmake_environment_hooks/local_setup.zsh
